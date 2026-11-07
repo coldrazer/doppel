@@ -1,0 +1,19 @@
+name: Verify Doppel
+on: [push, pull_request]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: |
+          npm start > /tmp/doppel.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://localhost:5173/api/health && break; sleep 1; done
+          npm run test:e2e
